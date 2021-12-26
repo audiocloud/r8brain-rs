@@ -181,6 +181,26 @@ impl Resampler {
             out_len
         }
     }
+
+    /// Feed the resampler zeroes until it produces all-zeroes as output
+    ///
+    /// # Arguments
+    ///
+    /// * `output`: Storage for the ringing samples; Experimentally, should be at least 8k samples
+    ///
+    /// returns: usize number of samples generated
+    pub fn flush(&mut self, output: &mut [f64]) -> usize {
+        let zeroes = [0.0; 64];
+        let mut pos = 0;
+        while pos < (output.len() - 128) {
+            let done = self.process(&zeroes, &mut output[pos..]);
+            if done > 0 && output[pos..pos + done].iter().all(|f| *f == 0.0) {
+                return pos + done;
+            }
+            pos += done;
+        }
+        pos
+    }
 }
 
 impl Drop for Resampler {
@@ -192,79 +212,4 @@ impl Drop for Resampler {
 }
 
 #[cfg(test)]
-mod tests {
-    use test::Bencher;
-
-    use super::*;
-
-    #[test]
-    fn test_resampler_basic() {
-        let input = [
-            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
-            0.3, 0.2, 0.1, 0.0,
-        ];
-
-        // 96k to 48k ..
-        let mut resampler = Resampler::new(2.0, 1.0, 32, 2.0, PrecisionProfile::Bits24);
-        let mut storage = [0.0f64; 512];
-
-        let mut empty_outputs = 0;
-        for i in 0..0xff {
-            let out_len = resampler.process(input.as_slice(), &mut storage);
-            if out_len == 0 {
-                empty_outputs += 1;
-                continue;
-            }
-            println!("{i:03}{result:?}", result = &storage[..out_len], i = i);
-        }
-
-        println!(
-            "it took {null_outputs} calls to get a non-empty slice back",
-            null_outputs = empty_outputs
-        );
-    }
-
-    #[bench]
-    fn bench_performance_24(b: &mut Bencher) {
-        let input = [
-            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
-            0.3, 0.2, 0.1, 0.0,
-        ];
-        let base_len = input.len();
-        let big_vec = input
-            .into_iter()
-            .cycle()
-            .take(base_len * 10)
-            .collect::<Vec<_>>();
-
-        let mut resampler = Resampler::new(2.0, 1.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
-        let mut storage = [0.0f64; 512];
-
-        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-        b.iter(|| {
-            resampler.process(big_vec.as_slice(), &mut storage);
-        });
-    }
-
-    #[bench]
-    fn bench_performance_16(b: &mut Bencher) {
-        let input = [
-            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
-            0.3, 0.2, 0.1, 0.0,
-        ];
-        let base_len = input.len();
-        let big_vec = input
-            .into_iter()
-            .cycle()
-            .take(base_len * 10)
-            .collect::<Vec<_>>();
-
-        let mut resampler = Resampler::new(2.0, 1.0, base_len * 10, 2.0, PrecisionProfile::Bits16);
-        let mut storage = [0.0f64; 512];
-
-        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-        b.iter(|| {
-            resampler.process(big_vec.as_slice(), &mut storage);
-        });
-    }
-}
+mod tests;

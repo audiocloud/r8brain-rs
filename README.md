@@ -22,17 +22,14 @@ fn test() {
 
 ## Performance
 
-On Macbook Pro M1, single threaded, downsampling 2:1 (like 96k to 48k).
+On Macbook Pro M1, single threaded:
 
 ```
-   Compiling r8brain-rs v0.1.0 (r8brain-rs)
-    Finished bench [optimized] target(s) in 1.13s
-     Running unittests (target/release/deps/r8brain_rs-af4e593fafe2edbe)
-
-running 3 tests
-test tests::test_resampler_basic ... ignored
-test tests::bench_performance_16 ... bench:         717 ns/iter (+/- 3) = 234 MB/s
-test tests::bench_performance_24 ... bench:         817 ns/iter (+/- 7) = 205 MB/s
-
-test result: ok. 0 passed; 0 failed; 1 ignored; 2 measured; 0 filtered out; finished in 0.84s
+test tests::resample_192k_to_44dot1k_24bit ... bench:       2,445 ns/iter (+/- 12) = 68 MB/s
+test tests::resample_44dot1k_to_192k_24bit ... bench:      11,701 ns/iter (+/- 70) = 14 MB/s
+test tests::resample_48k_to_192k_24bit     ... bench:       3,221 ns/iter (+/- 19) = 52 MB/s
+test tests::resample_48k_to_96k_16bit      ... bench:       1,530 ns/iter (+/- 6) = 109 MB/s
+test tests::resample_48k_to_96k_24bit      ... bench:       1,771 ns/iter (+/- 7) = 94 MB/s
+test tests::resample_96k_to_48k_16bit      ... bench:         711 ns/iter (+/- 6) = 236 MB/s
+test tests::resample_96k_to_48k_24bit      ... bench:         819 ns/iter (+/- 10) = 205 MB/s
 ```
