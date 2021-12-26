@@ -1,3 +1,6 @@
+#![feature(test)]
+extern crate test;
+
 use std::ffi::c_void;
 use std::os::raw::{c_double, c_int};
 use std::ptr::null_mut;
@@ -139,6 +142,11 @@ impl Resampler {
         }
     }
 
+    /// Get the maximum configured input slice length
+    pub fn max_input_len(&self) -> usize {
+        self.max_input_len
+    }
+
     ///
     ///
     /// # Arguments
@@ -184,7 +192,9 @@ impl Drop for Resampler {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
+    use test::Bencher;
+
     use super::*;
 
     #[test]
@@ -193,6 +203,7 @@ mod test {
             0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
             0.3, 0.2, 0.1, 0.0,
         ];
+
         // 96k to 48k ..
         let mut resampler = Resampler::new(2.0, 1.0, 32, 2.0, PrecisionProfile::Bits24);
         let mut storage = [0.0f64; 512];
@@ -211,5 +222,49 @@ mod test {
             "it took {null_outputs} calls to get a non-empty slice back",
             null_outputs = empty_outputs
         );
+    }
+
+    #[bench]
+    fn bench_performance_24(b: &mut Bencher) {
+        let input = [
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
+            0.3, 0.2, 0.1, 0.0,
+        ];
+        let base_len = input.len();
+        let big_vec = input
+            .into_iter()
+            .cycle()
+            .take(base_len * 10)
+            .collect::<Vec<_>>();
+
+        let mut resampler = Resampler::new(2.0, 1.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
+        let mut storage = [0.0f64; 512];
+
+        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
+        b.iter(|| {
+            resampler.process(big_vec.as_slice(), &mut storage);
+        });
+    }
+
+    #[bench]
+    fn bench_performance_16(b: &mut Bencher) {
+        let input = [
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
+            0.3, 0.2, 0.1, 0.0,
+        ];
+        let base_len = input.len();
+        let big_vec = input
+            .into_iter()
+            .cycle()
+            .take(base_len * 10)
+            .collect::<Vec<_>>();
+
+        let mut resampler = Resampler::new(2.0, 1.0, base_len * 10, 2.0, PrecisionProfile::Bits16);
+        let mut storage = [0.0f64; 512];
+
+        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
+        b.iter(|| {
+            resampler.process(big_vec.as_slice(), &mut storage);
+        });
     }
 }
