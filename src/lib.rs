@@ -24,12 +24,7 @@ extern "C" {
 
     fn r8b_clear(resampler: *const c_void);
 
-    fn r8b_process(
-        resampler: *const c_void,
-        input: *const f64,
-        len: c_int,
-        output: *mut *const f64,
-    ) -> c_int;
+    fn r8b_process(resampler: *const c_void, input: *const f64, len: c_int, output: *mut *const f64) -> c_int;
 }
 
 /// The r8brain resampler. keep it around to submit samples for processing, drop when not needed
@@ -91,13 +86,7 @@ impl Resampler {
     /// let output_len = resampler.process(&input, &mut output);
     /// let resampled = &output[..output_len];
     /// ```
-    pub fn new(
-        src_rate: f64,
-        dst_rate: f64,
-        max_input_len: usize,
-        req_trans_band: f64,
-        profile: PrecisionProfile,
-    ) -> Self {
+    pub fn new(src_rate: f64, dst_rate: f64, max_input_len: usize, req_trans_band: f64, profile: PrecisionProfile) -> Self {
         use PrecisionProfile::*;
 
         Self {
@@ -168,8 +157,7 @@ impl Resampler {
             let mut ptr: *const f64 = null_mut();
 
             // process the samples and wait for out_len to be populated
-            let out_len =
-                r8b_process(self.ptr, input.as_ptr(), input.len() as c_int, &mut ptr) as usize;
+            let out_len = r8b_process(self.ptr, input.as_ptr(), input.len() as c_int, &mut ptr) as usize;
 
             // make sure we have room
             assert!(out_len <= output.len());
