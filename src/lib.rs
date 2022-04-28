@@ -1,6 +1,3 @@
-#![feature(test)]
-extern crate test;
-
 use std::ffi::c_void;
 use std::os::raw::{c_double, c_int};
 use std::ptr::null_mut;
@@ -199,5 +196,5 @@ impl Drop for Resampler {
     }
 }
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
