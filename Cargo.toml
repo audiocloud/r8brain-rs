@@ -1,11 +1,12 @@
 [package]
 name = "r8brain-rs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+authors = ["Bojan Šernek <bojan@distopik.com>", "Aleksey Vaneev"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "r8brain audio resampler bindings for Rust. Sample rate converter designed by Aleksey Vaneev of Voxengo"
 
 [dependencies]
 
 [build-dependencies]
-cmake = "0.1.46"
+cmake = "0.1"
