@@ -7,7 +7,7 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", dst.display());
     dst.push(env::var("PROFILE").expect("Profile must be specified"));
     println!("cargo:rustc-link-search=native={}", dst.display());
-    println!("cargo:rustc-link-lib=r8brain");
+    println!("cargo:rustc-link-lib=static=r8brain");
 
     let target = env::var("TARGET").unwrap();
     if target.contains("apple") {
