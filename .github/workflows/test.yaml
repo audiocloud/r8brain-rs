@@ -14,8 +14,6 @@ jobs:
             os: "windows-latest"
           - build: "x86_64-apple-darwin"
             os: "macos-latest"
-          - build: "aarch64-apple-darwin"
-            os: "macos-latest"
 
     name: (${{ matrix.build }}) Test
     runs-on: ${{ matrix.os }}
@@ -47,11 +45,6 @@ jobs:
       - name: Build library
         run: |
           cargo build --target=${{ matrix.build }} ${{ matrix.features }}
-
-      - name: On windows...
-        if: (success() || failure()) && (matrix.os == 'windows-latest')
-        run: |
-          tree /F
 
       - name: Run tests
         run: |
