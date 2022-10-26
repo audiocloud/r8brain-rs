@@ -8,9 +8,10 @@ fn main() {
     };
 
     let dst = cmake::Config::new(".").build_target("r8brain").build();
-
-    println!("cargo:rustc-link-search=native={}/build/{}", dst.display(), build_type);
-    println!("cargo:rustc-link-search=native={}/build", dst.display());
+    println!("cargo:rustc-link-search=native={}", dst.display());
+    dst.push("build");
+    println!("cargo:rustc-link-search=native={}", dst.display());
+    dst.push(build_type);
     println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=r8brain");
 
