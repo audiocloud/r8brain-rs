@@ -49,7 +49,7 @@ jobs:
           cargo build --target=${{ matrix.build }} ${{ matrix.features }}
 
       - name: On windows...
-        if: matrix.os == 'windows-latest'
+        if: success() || failure() && matrix.os == 'windows-latest'
         run: |
           dir /s target
 
