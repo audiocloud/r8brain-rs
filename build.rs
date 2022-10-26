@@ -7,7 +7,7 @@ fn main() {
         "Release"
     };
 
-    let dst = cmake::Config::new(".").build_target("r8brain").build();
+    let mut dst = cmake::Config::new(".").build_target("r8brain").build();
     println!("cargo:rustc-link-search=native={}", dst.display());
     dst.push("build");
     println!("cargo:rustc-link-search=native={}", dst.display());
