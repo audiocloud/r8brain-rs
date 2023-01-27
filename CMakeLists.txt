@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(r8brain)
 include_directories(r8brain/DLL)
- include_directories(r8brain/pffft_double)
- include_directories(r8brain/pffft_double/simd)
+include_directories(r8brain/pffft_double)
+include_directories(r8brain/pffft_double/simd)
 
 add_library(r8brain STATIC
         r8brain/pffft_double/simd/pf_avx_double.h
@@ -38,4 +38,4 @@ add_library(r8brain STATIC
         r8brain/r8bconf.h
         r8brain/r8butil.h)
 
-target_compile_definitions(r8brain PUBLIC _cdecl= R8B_PFFFT_DOUBLE)
+target_compile_definitions(r8brain PUBLIC _cdecl= R8BSRC_DECL= R8B_PFFFT_DOUBLE)
