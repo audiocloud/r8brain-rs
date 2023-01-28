@@ -1,11 +1,10 @@
-use test::Bencher;
-
 use super::*;
 
 #[test]
 fn test_resampler_basic() {
     let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
+        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3,
+        0.2, 0.1, 0.0,
     ];
 
     // 96k to 48k ..
@@ -31,7 +30,8 @@ fn test_resampler_basic() {
 #[test]
 fn test_resampler_flush() {
     let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
+        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3,
+        0.2, 0.1, 0.0,
     ];
     let mut resampler = Resampler::new(2.0, 1.0, 128, 2.0, PrecisionProfile::Bits24);
     let mut storage = [0.0f64; 4096];
@@ -44,121 +44,165 @@ fn test_resampler_flush() {
     println!("flush size: {flush_len}", flush_len = flush_len);
 }
 
-#[bench]
-fn resample_96k_to_48k_24bit(b: &mut Bencher) {
+#[test]
+fn test_resampler_input_len() {
     let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
+        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3,
+        0.2, 0.1, 0.0,
     ];
-    let base_len = input.len();
-    let big_vec = input.into_iter().cycle().take(base_len * 10).collect::<Vec<_>>();
+    let mut resampler = Resampler::new(2.0, 1.0, 128, 2.0, PrecisionProfile::Bits24);
+    let mut storage = [0.0f64; 4096];
 
-    let mut resampler = Resampler::new(2.0, 1.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
-    let mut storage = [0.0f64; 512];
+    assert_eq!(resampler.input_len_for_output_pos(0), 3388);
 
-    b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-    b.iter(|| {
-        resampler.process(big_vec.as_slice(), &mut storage);
-    });
+    let mut out_pos = 0;
+    let mut inp_pos = 0;
+
+    for _ in 0..0xff {
+        inp_pos += input.len();
+        out_pos += resampler.process(input.as_slice(), &mut storage);
+    }
+
+    assert_eq!(
+        resampler.input_len_for_output_pos(out_pos + 0xff) - inp_pos,
+        2 * 0xff + 1
+    );
 }
 
-#[bench]
-fn resample_96k_to_48k_16bit(b: &mut Bencher) {
-    let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
-    ];
-    let base_len = input.len();
-    let big_vec = input.into_iter().cycle().take(base_len * 10).collect::<Vec<_>>();
+#[cfg(bench)]
+mod benchmarks {
 
-    let mut resampler = Resampler::new(2.0, 1.0, base_len * 10, 2.0, PrecisionProfile::Bits16);
-    let mut storage = [0.0f64; 512];
+    #[bench]
+    fn resample_96k_to_48k_16bit(b: &mut Bencher) {
+        let input = [
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
+            0.3, 0.2, 0.1, 0.0,
+        ];
+        let base_len = input.len();
+        let big_vec = input
+            .into_iter()
+            .cycle()
+            .take(base_len * 10)
+            .collect::<Vec<_>>();
 
-    b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-    b.iter(|| {
-        resampler.process(big_vec.as_slice(), &mut storage);
-    });
-}
+        let mut resampler = Resampler::new(2.0, 1.0, base_len * 10, 2.0, PrecisionProfile::Bits16);
+        let mut storage = [0.0f64; 512];
 
-#[bench]
-fn resample_48k_to_96k_16bit(b: &mut Bencher) {
-    let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
-    ];
-    let base_len = input.len();
-    let big_vec = input.into_iter().cycle().take(base_len * 10).collect::<Vec<_>>();
+        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
+        b.iter(|| {
+            resampler.process(big_vec.as_slice(), &mut storage);
+        });
+    }
 
-    let mut resampler = Resampler::new(1.0, 2.0, base_len * 10, 2.0, PrecisionProfile::Bits16);
-    let mut storage = [0.0f64; 512];
+    #[bench]
+    fn resample_48k_to_96k_16bit(b: &mut Bencher) {
+        let input = [
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
+            0.3, 0.2, 0.1, 0.0,
+        ];
+        let base_len = input.len();
+        let big_vec = input
+            .into_iter()
+            .cycle()
+            .take(base_len * 10)
+            .collect::<Vec<_>>();
 
-    b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-    b.iter(|| {
-        resampler.process(big_vec.as_slice(), &mut storage);
-    });
-}
+        let mut resampler = Resampler::new(1.0, 2.0, base_len * 10, 2.0, PrecisionProfile::Bits16);
+        let mut storage = [0.0f64; 512];
 
-#[bench]
-fn resample_48k_to_96k_24bit(b: &mut Bencher) {
-    let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
-    ];
-    let base_len = input.len();
-    let big_vec = input.into_iter().cycle().take(base_len * 10).collect::<Vec<_>>();
+        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
+        b.iter(|| {
+            resampler.process(big_vec.as_slice(), &mut storage);
+        });
+    }
 
-    let mut resampler = Resampler::new(1.0, 2.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
-    let mut storage = [0.0f64; 512];
+    #[bench]
+    fn resample_48k_to_96k_24bit(b: &mut Bencher) {
+        let input = [
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
+            0.3, 0.2, 0.1, 0.0,
+        ];
+        let base_len = input.len();
+        let big_vec = input
+            .into_iter()
+            .cycle()
+            .take(base_len * 10)
+            .collect::<Vec<_>>();
 
-    b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-    b.iter(|| {
-        resampler.process(big_vec.as_slice(), &mut storage);
-    });
-}
+        let mut resampler = Resampler::new(1.0, 2.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
+        let mut storage = [0.0f64; 512];
 
-#[bench]
-fn resample_48k_to_192k_24bit(b: &mut Bencher) {
-    let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
-    ];
-    let base_len = input.len();
-    let big_vec = input.into_iter().cycle().take(base_len * 10).collect::<Vec<_>>();
+        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
+        b.iter(|| {
+            resampler.process(big_vec.as_slice(), &mut storage);
+        });
+    }
 
-    let mut resampler = Resampler::new(1.0, 4.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
-    let mut storage = [0.0f64; 1024];
+    #[bench]
+    fn resample_48k_to_192k_24bit(b: &mut Bencher) {
+        let input = [
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
+            0.3, 0.2, 0.1, 0.0,
+        ];
+        let base_len = input.len();
+        let big_vec = input
+            .into_iter()
+            .cycle()
+            .take(base_len * 10)
+            .collect::<Vec<_>>();
 
-    b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-    b.iter(|| {
-        resampler.process(big_vec.as_slice(), &mut storage);
-    });
-}
+        let mut resampler = Resampler::new(1.0, 4.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
+        let mut storage = [0.0f64; 1024];
 
-#[bench]
-fn resample_44dot1k_to_192k_24bit(b: &mut Bencher) {
-    let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
-    ];
-    let base_len = input.len();
-    let big_vec = input.into_iter().cycle().take(base_len * 10).collect::<Vec<_>>();
+        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
+        b.iter(|| {
+            resampler.process(big_vec.as_slice(), &mut storage);
+        });
+    }
 
-    let mut resampler = Resampler::new(44.1, 192.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
-    let mut storage = [0.0f64; 1024];
+    #[bench]
+    fn resample_44dot1k_to_192k_24bit(b: &mut Bencher) {
+        let input = [
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
+            0.3, 0.2, 0.1, 0.0,
+        ];
+        let base_len = input.len();
+        let big_vec = input
+            .into_iter()
+            .cycle()
+            .take(base_len * 10)
+            .collect::<Vec<_>>();
 
-    b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-    b.iter(|| {
-        resampler.process(big_vec.as_slice(), &mut storage);
-    });
-}
+        let mut resampler =
+            Resampler::new(44.1, 192.0, base_len * 10, 2.0, PrecisionProfile::Bits24);
+        let mut storage = [0.0f64; 1024];
 
-#[bench]
-fn resample_192k_to_44dot1k_24bit(b: &mut Bencher) {
-    let input = [
-        0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
-    ];
-    let base_len = input.len();
-    let big_vec = input.into_iter().cycle().take(base_len * 10).collect::<Vec<_>>();
+        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
+        b.iter(|| {
+            resampler.process(big_vec.as_slice(), &mut storage);
+        });
+    }
 
-    let mut resampler = Resampler::new(192.0, 44.1, base_len * 10, 2.0, PrecisionProfile::Bits24);
-    let mut storage = [0.0f64; 1024];
+    #[bench]
+    fn resample_192k_to_44dot1k_24bit(b: &mut Bencher) {
+        let input = [
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4,
+            0.3, 0.2, 0.1, 0.0,
+        ];
+        let base_len = input.len();
+        let big_vec = input
+            .into_iter()
+            .cycle()
+            .take(base_len * 10)
+            .collect::<Vec<_>>();
 
-    b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
-    b.iter(|| {
-        resampler.process(big_vec.as_slice(), &mut storage);
-    });
+        let mut resampler =
+            Resampler::new(192.0, 44.1, base_len * 10, 2.0, PrecisionProfile::Bits24);
+        let mut storage = [0.0f64; 1024];
+
+        b.bytes = (base_len * std::mem::size_of::<f64>()) as u64;
+        b.iter(|| {
+            resampler.process(big_vec.as_slice(), &mut storage);
+        });
+    }
 }

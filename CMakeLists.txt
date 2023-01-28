@@ -36,6 +36,7 @@ add_library(r8brain STATIC
         r8brain/r8bbase.cpp
         r8brain/r8bbase.h
         r8brain/r8bconf.h
-        r8brain/r8butil.h)
+        r8brain/r8butil.h
+        contrib/dll_additional.cpp)
 
 target_compile_definitions(r8brain PUBLIC _cdecl= R8BSRC_DECL= R8B_PFFFT_DOUBLE)
