@@ -274,6 +274,15 @@ impl ResamplerQueue {
     self.output.pop_front()
   }
 
+  /// Reset the resampler and output queue, return number of samples "lost" in the queue
+  pub fn clear(&mut self) -> usize {
+    let rv = self.available_for_reading();
+    self.resampler.clear();
+    self.output.clear();
+
+    rv
+  }
+
   /// Access the internal r8b resampler
   pub fn resampler(&self) -> &Resampler {
     &self.resampler
