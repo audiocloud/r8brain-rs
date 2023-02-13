@@ -27,11 +27,10 @@ fn test() {
 On Macbook Pro M1, single threaded:
 
 ```
-test tests::resample_192k_to_44dot1k_24bit ... bench:       2,445 ns/iter (+/- 12) = 68 MB/s
-test tests::resample_44dot1k_to_192k_24bit ... bench:      11,701 ns/iter (+/- 70) = 14 MB/s
-test tests::resample_48k_to_192k_24bit     ... bench:       3,221 ns/iter (+/- 19) = 52 MB/s
-test tests::resample_48k_to_96k_16bit      ... bench:       1,530 ns/iter (+/- 6) = 109 MB/s
-test tests::resample_48k_to_96k_24bit      ... bench:       1,771 ns/iter (+/- 7) = 94 MB/s
-test tests::resample_96k_to_48k_16bit      ... bench:         711 ns/iter (+/- 6) = 236 MB/s
-test tests::resample_96k_to_48k_24bit      ... bench:         819 ns/iter (+/- 10) = 205 MB/s
+test tests::benchmarks::resample_192k_to_44dot1k_24bit ... bench:       2,084 ns/iter (+/- 14) = 80 MB/s
+test tests::benchmarks::resample_44dot1k_to_192k_24bit ... bench:      10,025 ns/iter (+/- 386) = 16 MB/s
+test tests::benchmarks::resample_48k_to_192k_24bit     ... bench:       2,727 ns/iter (+/- 24) = 61 MB/s
+test tests::benchmarks::resample_48k_to_96k_16bit      ... bench:       1,460 ns/iter (+/- 35) = 115 MB/s
+test tests::benchmarks::resample_48k_to_96k_24bit      ... bench:       1,705 ns/iter (+/- 40) = 98 MB/s
+test tests::benchmarks::resample_96k_to_48k_16bit      ... bench:         674 ns/iter (+/- 6) = 249 MB/s
 ```
