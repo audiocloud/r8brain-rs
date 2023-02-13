@@ -2,6 +2,8 @@
 
 rust interface to the r8brain free resampler: https://github.com/avaneev/r8brain-free-src
 
+Sample rate converter designed by Aleksey Vaneev of Voxengo
+
 ## Example usage
 
 ```rust
