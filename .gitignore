@@ -113,3 +113,6 @@ Temporary Items
 .apdisk
 
 .idea
+build
+CMakeFiles
+.vscode
